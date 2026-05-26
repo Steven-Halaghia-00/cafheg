@@ -17,7 +17,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AllocationServiceTest {
@@ -79,52 +78,52 @@ class AllocationServiceTest {
   void getParentDroitAllocation_GivenOnlyParent1HasLucrativeActivity_ShouldReturnParent1() {
     Map<String, Object> parameters = validParentDecisionParameters(true, false, 1000, 9000);
 
-    String parent = allocationService.getParentDroitAllocation(parameters);
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
 
-    assertEquals("Parent1", parent);
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent1());
   }
 
   @Test
   void getParentDroitAllocation_GivenOnlyParent2HasLucrativeActivity_ShouldReturnParent2() {
     Map<String, Object> parameters = validParentDecisionParameters(false, true, 9000, 1000);
 
-    String parent = allocationService.getParentDroitAllocation(parameters);
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
 
-    assertEquals("Parent2", parent);
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
   }
 
   @Test
   void getParentDroitAllocation_GivenBothParentsHaveLucrativeActivityAndParent1EarnsMore_ShouldReturnParent1() {
     Map<String, Object> parameters = validParentDecisionParameters(true, true, 5000, 3000);
 
-    String parent = allocationService.getParentDroitAllocation(parameters);
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
 
-    assertEquals("Parent1", parent);
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent1());
   }
 
   @Test
   void getParentDroitAllocation_GivenBothParentsHaveLucrativeActivityAndParent2EarnsMore_ShouldReturnParent2() {
     Map<String, Object> parameters = validParentDecisionParameters(true, true, 3000, 5000);
 
-    String parent = allocationService.getParentDroitAllocation(parameters);
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
 
-    assertEquals("Parent2", parent);
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
   }
 
   @Test
   void getParentDroitAllocation_GivenBothParentsHaveLucrativeActivityAndEqualSalaries_ShouldReturnParent2() {
     Map<String, Object> parameters = validParentDecisionParameters(true, true, 3000, 3000);
 
-    String parent = allocationService.getParentDroitAllocation(parameters);
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
 
-    assertEquals("Parent2", parent);
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
   }
 
   @Test
   void getParentDroitAllocation_GivenNoParameters_ShouldReturnParent2() {
-    String parent = allocationService.getParentDroitAllocation(Collections.emptyMap());
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(Collections.emptyMap());
 
-    assertEquals("Parent2", parent);
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
   }
 
   @Test
@@ -135,9 +134,9 @@ class AllocationServiceTest {
     parameters.put("parent2Residence", "Neuchatel");
     parameters.put("parentsEnsemble", true);
 
-    String parent = allocationService.getParentDroitAllocation(parameters);
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
 
-    assertEquals("Parent2", parent);
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
   }
 
   @Test

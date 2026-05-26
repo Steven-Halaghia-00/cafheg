@@ -50,7 +50,7 @@ public class RESTController {
      */
     @PostMapping("/droits/quel-parent")
     public String getParentDroitAllocation(@RequestBody Map<String, Object> params) {
-        return inTransaction(() -> allocationService.getParentDroitAllocation(params));
+        return inTransaction(() -> allocationService.getParentDroitAllocation(params).parent());
     }
 
     @GetMapping("/allocataires")

@@ -9,8 +9,14 @@ import java.util.Map;
 
 public class AllocationService {
 
-  private static final String PARENT_1 = "Parent1";
-  private static final String PARENT_2 = "Parent2";
+  private static final String ENFANT_RESIDENCE = "enfantResidence";
+  private static final String PARENT_1_ACTIVITE_LUCRATIVE = "parent1ActiviteLucrative";
+  private static final String PARENT_1_RESIDENCE = "parent1Residence";
+  private static final String PARENT_2_ACTIVITE_LUCRATIVE = "parent2ActiviteLucrative";
+  private static final String PARENT_2_RESIDENCE = "parent2Residence";
+  private static final String PARENTS_ENSEMBLE = "parentsEnsemble";
+  private static final String PARENT_1_SALAIRE = "parent1Salaire";
+  private static final String PARENT_2_SALAIRE = "parent2Salaire";
 
   private final AllocataireMapper allocataireMapper;
   private final AllocationMapper allocationMapper;
@@ -31,25 +37,44 @@ public class AllocationService {
     return allocationMapper.findAll();
   }
 
-  public String getParentDroitAllocation(Map<String, Object> parameters) {
+  public ParentDroitAllocationResult getParentDroitAllocation(Map<String, Object> parameters) {
     System.out.println("Déterminer quel parent a le droit aux allocations");
-    String eR = (String)parameters.getOrDefault("enfantResidence", "");
-    Boolean p1AL = (Boolean)parameters.getOrDefault("parent1ActiviteLucrative", false);
-    String p1Residence = (String)parameters.getOrDefault("parent1Residence", "");
-    Boolean p2AL = (Boolean)parameters.getOrDefault("parent2ActiviteLucrative", false);
-    String p2Residence = (String)parameters.getOrDefault("parent2Residence", "");
-    Boolean pEnsemble = (Boolean)parameters.getOrDefault("parentsEnsemble", false);
-    Number salaireP1 = (Number) parameters.getOrDefault("parent1Salaire", BigDecimal.ZERO);
-    Number salaireP2 = (Number) parameters.getOrDefault("parent2Salaire", BigDecimal.ZERO);
+    ParentDroitAllocationParameters decisionParameters = toParentDroitAllocationParameters(parameters);
 
-    if(p1AL && !p2AL) {
-      return PARENT_1;
+    if(decisionParameters.parent1ActiviteLucrative() && !decisionParameters.parent2ActiviteLucrative()) {
+      return ParentDroitAllocationResult.parent1();
     }
 
-    if(p2AL && !p1AL) {
-      return PARENT_2;
+    if(decisionParameters.parent2ActiviteLucrative() && !decisionParameters.parent1ActiviteLucrative()) {
+      return ParentDroitAllocationResult.parent2();
     }
 
-    return salaireP1.doubleValue() > salaireP2.doubleValue() ? PARENT_1 : PARENT_2;
+    return decisionParameters.parent1Salaire().doubleValue() > decisionParameters.parent2Salaire().doubleValue()
+        ? ParentDroitAllocationResult.parent1()
+        : ParentDroitAllocationResult.parent2();
+  }
+
+  private ParentDroitAllocationParameters toParentDroitAllocationParameters(Map<String, Object> parameters) {
+    return new ParentDroitAllocationParameters(
+        (String) parameters.getOrDefault(ENFANT_RESIDENCE, ""),
+        (Boolean) parameters.getOrDefault(PARENT_1_ACTIVITE_LUCRATIVE, false),
+        (String) parameters.getOrDefault(PARENT_1_RESIDENCE, ""),
+        (Boolean) parameters.getOrDefault(PARENT_2_ACTIVITE_LUCRATIVE, false),
+        (String) parameters.getOrDefault(PARENT_2_RESIDENCE, ""),
+        (Boolean) parameters.getOrDefault(PARENTS_ENSEMBLE, false),
+        (Number) parameters.getOrDefault(PARENT_1_SALAIRE, BigDecimal.ZERO),
+        (Number) parameters.getOrDefault(PARENT_2_SALAIRE, BigDecimal.ZERO)
+    );
+  }
+
+  private record ParentDroitAllocationParameters(
+      String enfantResidence,
+      Boolean parent1ActiviteLucrative,
+      String parent1Residence,
+      Boolean parent2ActiviteLucrative,
+      String parent2Residence,
+      Boolean parentsEnsemble,
+      Number parent1Salaire,
+      Number parent2Salaire) {
   }
 }
