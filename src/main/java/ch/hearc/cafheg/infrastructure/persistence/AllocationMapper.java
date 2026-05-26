@@ -38,8 +38,7 @@ public class AllocationMapper extends Mapper {
       }
       return allocations;
     } catch (SQLException e) {
-      logger.error("Failed to find all allocations", e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to find all allocations", e);
     }
 
   }

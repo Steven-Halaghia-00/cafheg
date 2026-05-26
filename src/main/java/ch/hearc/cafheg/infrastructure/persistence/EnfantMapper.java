@@ -28,8 +28,7 @@ public class EnfantMapper extends Mapper {
       return new Enfant(new NoAVS(resultSet.getString(1)),
           resultSet.getString(2), resultSet.getString(3));
     } catch (SQLException e) {
-      logger.error("Failed to find enfant by id {}", id, e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to find enfant by id " + id, e);
     }
   }
 
