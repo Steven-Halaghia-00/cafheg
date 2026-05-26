@@ -1,0 +1,16 @@
+@baseUrl = http://localhost:8080/api
+
+### Determine which parent has allocation rights
+POST {{baseUrl}}/droits/quel-parent
+Content-Type: application/json
+
+{
+  "enfantResidence": "Neuchatel",
+  "parent1Residence": "Neuchatel",
+  "parent2Residence": "Bienne",
+  "parentsEnsemble": false,
+  "parent1ActiviteLucrative": true,
+  "parent2ActiviteLucrative": true,
+  "parent1Salaire": 2500,
+  "parent2Salaire": 3000
+}
