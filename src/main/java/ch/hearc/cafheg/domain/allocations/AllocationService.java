@@ -2,6 +2,7 @@ package ch.hearc.cafheg.domain.allocations;
 
 import ch.hearc.cafheg.infrastructure.persistence.AllocataireMapper;
 import ch.hearc.cafheg.infrastructure.persistence.AllocationMapper;
+import ch.hearc.cafheg.infrastructure.persistence.VersementMapper;
 
 import java.util.List;
 import java.util.Objects;
@@ -10,12 +11,15 @@ public class AllocationService {
 
   private final AllocataireMapper allocataireMapper;
   private final AllocationMapper allocationMapper;
+  private final VersementMapper versementMapper;
 
   public AllocationService(
       AllocataireMapper allocataireMapper,
-      AllocationMapper allocationMapper) {
+      AllocationMapper allocationMapper,
+      VersementMapper versementMapper) {
     this.allocataireMapper = allocataireMapper;
     this.allocationMapper = allocationMapper;
+    this.versementMapper = versementMapper;
   }
 
   public List<Allocataire> findAllAllocataires(String likeNom) {
@@ -25,6 +29,50 @@ public class AllocationService {
 
   public List<Allocation> findAllocationsActuelles() {
     return allocationMapper.findAll();
+  }
+
+  public Allocataire updateAllocataire(long allocataireId, Allocataire modification) {
+    Objects.requireNonNull(modification, "modification");
+    return updateAllocataire(allocataireId, modification.getNom(), modification.getPrenom());
+  }
+
+  public Allocataire updateAllocataire(long allocataireId, String nom, String prenom) {
+    System.out.println("Modifier l'allocataire " + allocataireId);
+    Objects.requireNonNull(nom, "nom");
+    Objects.requireNonNull(prenom, "prenom");
+
+    if (!allocataireMapper.existsById(allocataireId)) {
+      throw new AllocataireIntrouvableException(allocataireId);
+    }
+
+    Allocataire allocataire = allocataireMapper.findById(allocataireId);
+    boolean nomChange = !Objects.equals(allocataire.getNom(), nom);
+    boolean prenomChange = !Objects.equals(allocataire.getPrenom(), prenom);
+
+    if (!nomChange && !prenomChange) {
+      throw new ModificationAllocataireSansChangementException(allocataireId);
+    }
+
+    Allocataire allocataireModifie = new Allocataire(
+        allocataire.getNoAVS(),
+        nom,
+        prenom);
+    allocataireMapper.updateNomPrenom(allocataireId, allocataireModifie.getNom(), allocataireModifie.getPrenom());
+    return allocataireModifie;
+  }
+
+  public void deleteAllocataire(long allocataireId) {
+    System.out.println("Supprimer l'allocataire " + allocataireId);
+
+    if (!allocataireMapper.existsById(allocataireId)) {
+      throw new AllocataireIntrouvableException(allocataireId);
+    }
+
+    if (versementMapper.existsByAllocataireId(allocataireId)) {
+      throw new SuppressionAllocataireInterditeException(allocataireId);
+    }
+
+    allocataireMapper.deleteById(allocataireId);
   }
 
   public ParentDroitAllocationResult getParentDroitAllocation(ParentDroitAllocationParameters parameters) {

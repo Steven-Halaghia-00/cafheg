@@ -21,3 +21,43 @@ Content-Type: application/json
   "parent2StatutProfessionnel": "SALARIE",
   "parent2RevenuAvs": 3000
 }
+
+### List allocataires
+GET {{baseUrl}}/allocataires
+
+### Update allocataire name and firstname, noAVS in body must be ignored
+PUT {{baseUrl}}/allocataires/1
+Content-Type: application/json
+
+{
+  "nom": "Vuillaume",
+  "prenom": "Theo",
+  "noAVS": "9999-9999"
+}
+
+### Update allocataire without change should return 400
+PUT {{baseUrl}}/allocataires/1
+Content-Type: application/json
+
+{
+  "nom": "Vuillaume",
+  "prenom": "Theo"
+}
+
+### Update unknown allocataire should return 404
+PUT {{baseUrl}}/allocataires/99999
+Content-Type: application/json
+
+{
+  "nom": "Vuillaume",
+  "prenom": "Theo"
+}
+
+### Delete allocataire with versements should return 409
+DELETE {{baseUrl}}/allocataires/1
+
+### Delete allocataire without versements should return 204
+DELETE {{baseUrl}}/allocataires/21
+
+### Delete unknown allocataire should return 404
+DELETE {{baseUrl}}/allocataires/99999
