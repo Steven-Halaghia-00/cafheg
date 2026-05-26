@@ -6,5 +6,5 @@
 - Réaliser un front-end pour l'application grâce à une technologie côté client (Vue.js par exemple)
 - Mettre en place de la sécurité (Spring Security grâce au mécanisme de votre choix)
 - Proposer d'autres services WEB dans l'application
-- Mettre en place un système de logging (Log4j, SLF4J, Logback...) à la place des System.out.println()
+- Mettre en place un système de logging structuré (Log4j, SLF4J, Logback...) pour les sorties applicatives
 - Améliorer le service WEB en retournant des types de données définis (DTO) et documenter les services grâce à Swagger/OpenAPI

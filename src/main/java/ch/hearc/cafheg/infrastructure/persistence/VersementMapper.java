@@ -12,8 +12,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VersementMapper extends Mapper {
+
+  private static final Logger logger = LoggerFactory.getLogger(VersementMapper.class);
 
   private final String QUERY_FIND_ALL_ALLOCATIONS_NAISSANCE = "SELECT V.DATE_VERSEMENT,AN.MONTANT FROM VERSEMENTS V JOIN ALLOCATIONS_NAISSANCE AN ON V.NUMERO=AN.FK_VERSEMENTS";
   private final String QUERY_FIND_ALL_VERSEMENTS = "SELECT V.DATE_VERSEMENT,A.MONTANT FROM VERSEMENTS V JOIN VERSEMENTS_ALLOCATIONS VA ON V.NUMERO=VA.FK_VERSEMENTS JOIN ALLOCATIONS_ENFANTS AE ON AE.NUMERO=VA.FK_ALLOCATIONS_ENFANTS JOIN ALLOCATIONS A ON A.NUMERO=AE.FK_ALLOCATIONS";
@@ -22,14 +26,14 @@ public class VersementMapper extends Mapper {
   private final String QUERY_EXISTS_BY_ALLOCATAIRE_ID = "SELECT 1 FROM VERSEMENTS WHERE FK_ALLOCATAIRES=? LIMIT 1";
 
   public List<VersementAllocationNaissance> findAllVersementAllocationNaissance() {
-    System.out.println("findAllVersementAllocationNaissance()");
+    logger.debug("Finding all birth allocation versements");
     Connection connection = activeJDBCConnection();
       try {
         PreparedStatement preparedStatement = connection.prepareStatement(QUERY_FIND_ALL_ALLOCATIONS_NAISSANCE);
         ResultSet resultSet = preparedStatement.executeQuery();
         List<VersementAllocationNaissance> versements = new ArrayList<>();
         while (resultSet.next()) {
-          System.out.println("resultSet#next");
+          logger.trace("Mapping next birth allocation versement row");
           versements.add(
               new VersementAllocationNaissance(new Montant(resultSet.getBigDecimal(2)),
                   resultSet.getDate(1).toLocalDate()));
@@ -37,19 +41,20 @@ public class VersementMapper extends Mapper {
         }
         return versements;
       } catch (SQLException e) {
+      logger.error("Failed to find all birth allocation versements", e);
       throw new RuntimeException(e);
     }
   }
 
   public List<VersementAllocation> findAllVersementAllocation() {
-    System.out.println("findAllVersementAllocation()");
+    logger.debug("Finding all allocation versements");
     Connection connection = activeJDBCConnection();
     try {
       PreparedStatement preparedStatement = connection.prepareStatement(QUERY_FIND_ALL_VERSEMENTS);
       ResultSet resultSet = preparedStatement.executeQuery();
       List<VersementAllocation> versements = new ArrayList<>();
       while (resultSet.next()) {
-        System.out.println("resultSet#next");
+        logger.trace("Mapping next allocation versement row");
         versements.add(
             new VersementAllocation(new Montant(resultSet.getBigDecimal(2)),
                 resultSet.getDate(1).toLocalDate()));
@@ -57,18 +62,19 @@ public class VersementMapper extends Mapper {
       }
       return versements;
     } catch (SQLException e) {
+      logger.error("Failed to find all allocation versements", e);
       throw new RuntimeException(e);
     }
   }
 
   public List<VersementParentEnfant> findVersementParentEnfant() {
-    System.out.println("findVersementParentEnfant()");
+    logger.debug("Finding parent/enfant versements");
     Connection connection = activeJDBCConnection();
     try {
       PreparedStatement preparedStatement = connection.prepareStatement(QUERY_FIND_ALL_VERSEMENTS_PARENTS_ENFANTS);
       ResultSet resultSet = preparedStatement.executeQuery();
       List<VersementParentEnfant> versements = new ArrayList<>();
-      System.out.println("resultSet#next");
+      logger.trace("Iterating parent/enfant versement rows");
       while (resultSet.next()) {
         versements.add(
             new VersementParentEnfant(resultSet.getLong(1), resultSet.getLong(2),
@@ -77,19 +83,20 @@ public class VersementMapper extends Mapper {
       }
       return versements;
     } catch (SQLException e) {
+      logger.error("Failed to find parent/enfant versements", e);
       throw new RuntimeException(e);
     }
   }
 
   public List<VersementParentParMois> findVersementParentEnfantParMois() {
-    System.out.println("findVersementParentEnfantParMois()");
+    logger.debug("Finding parent/enfant versements by month");
     Connection connection = activeJDBCConnection();
     try {
       PreparedStatement preparedStatement = connection.prepareStatement(QUERY_FIND_ALL_VERSEMENTS_PARENTS_ENFANTS_PAR_MOIS);
       ResultSet resultSet = preparedStatement.executeQuery();
       List<VersementParentParMois> versements = new ArrayList<>();
       while (resultSet.next()) {
-        System.out.println("resultSet#next");
+        logger.trace("Mapping next parent/enfant monthly versement row");
         versements.add(
             new VersementParentParMois(resultSet.getLong(1),
                 new Montant(resultSet.getBigDecimal(2)),
@@ -98,12 +105,13 @@ public class VersementMapper extends Mapper {
       }
       return versements;
     } catch (SQLException e) {
+      logger.error("Failed to find parent/enfant versements by month", e);
       throw new RuntimeException(e);
     }
   }
 
   public boolean existsByAllocataireId(long allocataireId) {
-    System.out.println("existsByAllocataireId() " + allocataireId);
+    logger.debug("Checking versement existence for allocataire {}", allocataireId);
     Connection connection = activeJDBCConnection();
     try {
       PreparedStatement preparedStatement = connection.prepareStatement(QUERY_EXISTS_BY_ALLOCATAIRE_ID);
@@ -111,6 +119,7 @@ public class VersementMapper extends Mapper {
       ResultSet resultSet = preparedStatement.executeQuery();
       return resultSet.next();
     } catch (SQLException e) {
+      logger.error("Failed to check versement existence for allocataire {}", allocataireId, e);
       throw new RuntimeException(e);
     }
   }

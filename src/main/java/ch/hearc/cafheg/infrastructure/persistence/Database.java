@@ -7,8 +7,12 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Database {
+  private static final Logger logger = LoggerFactory.getLogger(Database.class);
+
   /** Pool de connections JDBC */
   private static DataSource dataSource;
 
@@ -34,23 +38,25 @@ public class Database {
    * @return Le résultat de l'exécution de la fonction
    */
   public static <T> T inTransaction(Supplier<T> inTransaction) {
-    System.out.println("inTransaction#start");
+    logger.debug("Starting database transaction");
     try {
-      System.out.println("inTransaction#getConnection");
+      logger.trace("Opening JDBC connection for transaction");
       connection.set(dataSource.getConnection());
       return inTransaction.get();
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
+      logger.error("Unexpected error during database transaction", e);
       throw new RuntimeException(e);
     } finally {
       try {
-        System.out.println("inTransaction#closeConnection");
+        logger.trace("Closing JDBC connection for transaction");
         connection.get().close();
       } catch (SQLException e) {
+        logger.error("Failed to close JDBC connection after transaction", e);
         throw new RuntimeException(e);
       }
-      System.out.println("inTransaction#end");
+      logger.debug("Database transaction finished");
       connection.remove();
     }
   }
@@ -63,7 +69,7 @@ public class Database {
    * Initialisation du pool de connections.
    */
   public void start(String jdbcUrl, String username, String password) {
-    System.out.println("Initializing datasource");
+    logger.info("Initializing datasource");
     HikariConfig config = new HikariConfig();
     config.setJdbcUrl(jdbcUrl);
     config.setUsername(username);
@@ -71,6 +77,6 @@ public class Database {
     config.setMaximumPoolSize(20);
     config.setDriverClassName("org.postgresql.Driver");
     dataSource = new HikariDataSource(config);
-    System.out.println("Datasource initialized");
+    logger.info("Datasource initialized");
   }
 }
