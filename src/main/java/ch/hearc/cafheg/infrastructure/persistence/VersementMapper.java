@@ -28,21 +28,20 @@ public class VersementMapper extends Mapper {
   public List<VersementAllocationNaissance> findAllVersementAllocationNaissance() {
     logger.debug("Finding all birth allocation versements");
     Connection connection = activeJDBCConnection();
-      try {
-        PreparedStatement preparedStatement = connection.prepareStatement(QUERY_FIND_ALL_ALLOCATIONS_NAISSANCE);
-        ResultSet resultSet = preparedStatement.executeQuery();
-        List<VersementAllocationNaissance> versements = new ArrayList<>();
-        while (resultSet.next()) {
-          logger.trace("Mapping next birth allocation versement row");
-          versements.add(
-              new VersementAllocationNaissance(new Montant(resultSet.getBigDecimal(2)),
-                  resultSet.getDate(1).toLocalDate()));
+    try {
+      PreparedStatement preparedStatement = connection.prepareStatement(QUERY_FIND_ALL_ALLOCATIONS_NAISSANCE);
+      ResultSet resultSet = preparedStatement.executeQuery();
+      List<VersementAllocationNaissance> versements = new ArrayList<>();
+      while (resultSet.next()) {
+        logger.trace("Mapping next birth allocation versement row");
+        versements.add(
+            new VersementAllocationNaissance(new Montant(resultSet.getBigDecimal(2)),
+                resultSet.getDate(1).toLocalDate()));
 
-        }
-        return versements;
-      } catch (SQLException e) {
-      logger.error("Failed to find all birth allocation versements", e);
-      throw new RuntimeException(e);
+      }
+      return versements;
+    } catch (SQLException e) {
+      throw new RuntimeException("Failed to find all birth allocation versements", e);
     }
   }
 
@@ -62,8 +61,7 @@ public class VersementMapper extends Mapper {
       }
       return versements;
     } catch (SQLException e) {
-      logger.error("Failed to find all allocation versements", e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to find all allocation versements", e);
     }
   }
 
@@ -83,8 +81,7 @@ public class VersementMapper extends Mapper {
       }
       return versements;
     } catch (SQLException e) {
-      logger.error("Failed to find parent/enfant versements", e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to find parent/enfant versements", e);
     }
   }
 
@@ -105,8 +102,7 @@ public class VersementMapper extends Mapper {
       }
       return versements;
     } catch (SQLException e) {
-      logger.error("Failed to find parent/enfant versements by month", e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to find parent/enfant versements by month", e);
     }
   }
 
@@ -119,8 +115,8 @@ public class VersementMapper extends Mapper {
       ResultSet resultSet = preparedStatement.executeQuery();
       return resultSet.next();
     } catch (SQLException e) {
-      logger.error("Failed to check versement existence for allocataire {}", allocataireId, e);
-      throw new RuntimeException(e);
+      throw new RuntimeException(
+          "Failed to check versement existence for allocataire " + allocataireId, e);
     }
   }
 }

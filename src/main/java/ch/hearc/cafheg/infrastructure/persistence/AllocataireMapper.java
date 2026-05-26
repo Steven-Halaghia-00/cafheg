@@ -57,8 +57,7 @@ public class AllocataireMapper extends Mapper {
       logger.debug("Found {} allocataires", allocataires.size());
       return allocataires;
     } catch (SQLException e) {
-      logger.error("Failed to find allocataires with name filter {}", likeNom, e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to find allocataires with name filter " + likeNom, e);
     }
   }
 
@@ -79,8 +78,7 @@ public class AllocataireMapper extends Mapper {
       return new Allocataire(new NoAVS(resultSet.getString(1)),
           resultSet.getString(2), resultSet.getString(3));
     } catch (SQLException e) {
-      logger.error("Failed to find allocataire by id {}", id, e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to find allocataire by id " + id, e);
     }
   }
 
@@ -94,8 +92,7 @@ public class AllocataireMapper extends Mapper {
       ResultSet resultSet = preparedStatement.executeQuery();
       return resultSet.next();
     } catch (SQLException e) {
-      logger.error("Failed to check allocataire existence by id {}", id, e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to check allocataire existence by id " + id, e);
     }
   }
 
@@ -108,8 +105,7 @@ public class AllocataireMapper extends Mapper {
       preparedStatement.setLong(1, id);
       preparedStatement.executeUpdate();
     } catch (SQLException e) {
-      logger.error("Failed to delete allocataire by id {}", id, e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to delete allocataire by id " + id, e);
     }
   }
 
@@ -124,8 +120,7 @@ public class AllocataireMapper extends Mapper {
       preparedStatement.setLong(3, id);
       preparedStatement.executeUpdate();
     } catch (SQLException e) {
-      logger.error("Failed to update allocataire name by id {}", id, e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to update allocataire name by id " + id, e);
     }
   }
 }
