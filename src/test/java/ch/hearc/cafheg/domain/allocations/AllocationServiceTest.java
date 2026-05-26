@@ -11,13 +11,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AllocationServiceTest {
 
@@ -75,8 +72,13 @@ class AllocationServiceTest {
   }
 
   @Test
-  void getParentDroitAllocation_GivenOnlyParent1HasLucrativeActivity_ShouldReturnParent1() {
-    Map<String, Object> parameters = validParentDecisionParameters(true, false, 1000, 9000);
+  void getParentDroitAllocation_CaseA_GivenOnlyParent1HasLucrativeActivity_ShouldReturnParent1() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, false, "Neuchatel", Canton.BE, StatutProfessionnel.INDEPENDANT, 1000),
+        parent(false, true, "Bienne", Canton.NE, StatutProfessionnel.SALARIE, 9000),
+        "Bienne",
+        false,
+        Canton.NE);
 
     ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
 
@@ -84,8 +86,13 @@ class AllocationServiceTest {
   }
 
   @Test
-  void getParentDroitAllocation_GivenOnlyParent2HasLucrativeActivity_ShouldReturnParent2() {
-    Map<String, Object> parameters = validParentDecisionParameters(false, true, 9000, 1000);
+  void getParentDroitAllocation_CaseA_GivenOnlyParent2HasLucrativeActivity_ShouldReturnParent2() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(false, true, "Neuchatel", Canton.NE, StatutProfessionnel.SALARIE, 9000),
+        parent(true, false, "Bienne", Canton.BE, StatutProfessionnel.INDEPENDANT, 1000),
+        "Neuchatel",
+        false,
+        Canton.NE);
 
     ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
 
@@ -93,8 +100,13 @@ class AllocationServiceTest {
   }
 
   @Test
-  void getParentDroitAllocation_GivenBothParentsHaveLucrativeActivityAndParent1EarnsMore_ShouldReturnParent1() {
-    Map<String, Object> parameters = validParentDecisionParameters(true, true, 5000, 3000);
+  void getParentDroitAllocation_CaseB_GivenOnlyParent1HasParentalAuthority_ShouldReturnParent1() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.INDEPENDANT, 1000),
+        parent(true, false, "Bienne", Canton.FR, StatutProfessionnel.SALARIE, 9000),
+        "Bienne",
+        false,
+        Canton.NE);
 
     ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
 
@@ -102,8 +114,13 @@ class AllocationServiceTest {
   }
 
   @Test
-  void getParentDroitAllocation_GivenBothParentsHaveLucrativeActivityAndParent2EarnsMore_ShouldReturnParent2() {
-    Map<String, Object> parameters = validParentDecisionParameters(true, true, 3000, 5000);
+  void getParentDroitAllocation_CaseB_GivenOnlyParent2HasParentalAuthority_ShouldReturnParent2() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, false, "Neuchatel", Canton.BE, StatutProfessionnel.SALARIE, 9000),
+        parent(true, true, "Bienne", Canton.FR, StatutProfessionnel.INDEPENDANT, 1000),
+        "Neuchatel",
+        false,
+        Canton.NE);
 
     ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
 
@@ -111,8 +128,27 @@ class AllocationServiceTest {
   }
 
   @Test
-  void getParentDroitAllocation_GivenBothParentsHaveLucrativeActivityAndEqualSalaries_ShouldReturnParent2() {
-    Map<String, Object> parameters = validParentDecisionParameters(true, true, 3000, 3000);
+  void getParentDroitAllocation_CaseC_GivenSeparatedParentsAndChildLivesWithParent1_ShouldReturnParent1() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.SALARIE, 1000),
+        parent(true, true, "Bienne", Canton.FR, StatutProfessionnel.SALARIE, 9000),
+        "Neuchatel",
+        false,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent1());
+  }
+
+  @Test
+  void getParentDroitAllocation_CaseC_GivenSeparatedParentsAndChildLivesWithParent2_ShouldReturnParent2() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.SALARIE, 9000),
+        parent(true, true, "Bienne", Canton.FR, StatutProfessionnel.SALARIE, 1000),
+        "Bienne",
+        false,
+        Canton.NE);
 
     ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
 
@@ -120,19 +156,27 @@ class AllocationServiceTest {
   }
 
   @Test
-  void getParentDroitAllocation_GivenNoParameters_ShouldReturnParent2() {
-    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(Collections.emptyMap());
+  void getParentDroitAllocation_CaseD_GivenParent1WorksInChildHomeCanton_ShouldReturnParent1() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.NE, StatutProfessionnel.SALARIE, 1000),
+        parent(true, true, "Neuchatel", Canton.FR, StatutProfessionnel.SALARIE, 9000),
+        "Neuchatel",
+        true,
+        Canton.NE);
 
-    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent1());
   }
 
   @Test
-  void getParentDroitAllocation_GivenResidenceAndTogetherValuesWithHigherParent2Salary_ShouldReturnParent2() {
-    Map<String, Object> parameters = new HashMap<>(validParentDecisionParameters(true, true, 2500, 3000));
-    parameters.put("enfantResidence", "Neuchatel");
-    parameters.put("parent1Residence", "Neuchatel");
-    parameters.put("parent2Residence", "Neuchatel");
-    parameters.put("parentsEnsemble", true);
+  void getParentDroitAllocation_CaseD_GivenParent2WorksInChildHomeCanton_ShouldReturnParent2() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.SALARIE, 9000),
+        parent(true, true, "Neuchatel", Canton.NE, StatutProfessionnel.SALARIE, 1000),
+        "Neuchatel",
+        true,
+        Canton.NE);
 
     ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
 
@@ -140,44 +184,80 @@ class AllocationServiceTest {
   }
 
   @Test
-  void getParentDroitAllocation_GivenNonStringResidence_ShouldThrowClassCastException() {
-    Map<String, Object> parameters = new HashMap<>(validParentDecisionParameters(true, false, 3000, 2000));
-    parameters.put("enfantResidence", 123);
+  void getParentDroitAllocation_CaseE_GivenParent1IsEmployeeAndParent2Independent_ShouldReturnParent1() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.SALARIE, 1000),
+        parent(true, true, "Neuchatel", Canton.FR, StatutProfessionnel.INDEPENDANT, 9000),
+        "Neuchatel",
+        true,
+        Canton.NE);
 
-    assertThrows(ClassCastException.class, () -> allocationService.getParentDroitAllocation(parameters));
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent1());
   }
 
   @Test
-  void getParentDroitAllocation_GivenNonBooleanActivity_ShouldThrowClassCastException() {
-    Map<String, Object> parameters = new HashMap<>(validParentDecisionParameters(true, false, 3000, 2000));
-    parameters.put("parent1ActiviteLucrative", "true");
+  void getParentDroitAllocation_CaseE_GivenParent2IsEmployeeAndParent1Independent_ShouldReturnParent2() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.INDEPENDANT, 9000),
+        parent(true, true, "Neuchatel", Canton.FR, StatutProfessionnel.SALARIE, 1000),
+        "Neuchatel",
+        true,
+        Canton.NE);
 
-    assertThrows(ClassCastException.class, () -> allocationService.getParentDroitAllocation(parameters));
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
   }
 
   @Test
-  void getParentDroitAllocation_GivenNonNumberSalary_ShouldThrowClassCastException() {
-    Map<String, Object> parameters = new HashMap<>(validParentDecisionParameters(true, false, 3000, 2000));
-    parameters.put("parent1Salaire", "3000");
+  void getParentDroitAllocation_CaseE_GivenBothParentsAreEmployees_ShouldReturnHighestAvsIncome() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.SALARIE, 9000),
+        parent(true, true, "Neuchatel", Canton.FR, StatutProfessionnel.SALARIE, 1000),
+        "Neuchatel",
+        true,
+        Canton.NE);
 
-    assertThrows(ClassCastException.class, () -> allocationService.getParentDroitAllocation(parameters));
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent1());
   }
 
-  private Map<String, Object> validParentDecisionParameters(
-      boolean parent1ActiviteLucrative,
-      boolean parent2ActiviteLucrative,
-      Number parent1Salaire,
-      Number parent2Salaire) {
-    return Map.of(
-        "enfantResidence", "Neuchatel",
-        "parent1Residence", "Neuchatel",
-        "parent2Residence", "Bienne",
-        "parentsEnsemble", false,
-        "parent1ActiviteLucrative", parent1ActiviteLucrative,
-        "parent2ActiviteLucrative", parent2ActiviteLucrative,
-        "parent1Salaire", parent1Salaire,
-        "parent2Salaire", parent2Salaire
-    );
+  @Test
+  void getParentDroitAllocation_CaseF_GivenBothParentsAreIndependent_ShouldReturnHighestAvsIncome() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.INDEPENDANT, 1000),
+        parent(true, true, "Neuchatel", Canton.FR, StatutProfessionnel.INDEPENDANT, 9000),
+        "Neuchatel",
+        true,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
+  }
+
+  private ParentDroitAllocationParameters decision(
+      ParentDroitAllocationParent parent1,
+      ParentDroitAllocationParent parent2,
+      String enfantResidence,
+      boolean parentsEnsemble,
+      Canton enfantCantonDomicile) {
+    return new ParentDroitAllocationParameters(parent1, parent2, enfantResidence, parentsEnsemble,
+        enfantCantonDomicile);
+  }
+
+  private ParentDroitAllocationParent parent(
+      boolean activiteLucrative,
+      boolean autoriteParentale,
+      String residence,
+      Canton cantonTravail,
+      StatutProfessionnel statutProfessionnel,
+      int revenuAvs) {
+    return new ParentDroitAllocationParent(activiteLucrative, autoriteParentale, residence, cantonTravail,
+        statutProfessionnel, BigDecimal.valueOf(revenuAvs));
   }
 
 }

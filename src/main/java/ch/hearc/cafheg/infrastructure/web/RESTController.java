@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 import static ch.hearc.cafheg.infrastructure.persistence.Database.inTransaction;
 
@@ -42,15 +41,23 @@ public class RESTController {
         "enfantResidence" : "Neuchâtel",
         "parent1Residence" : "Neuchâtel",
         "parent2Residence" : "Bienne",
+        "parentsEnsemble" : true,
+        "enfantCantonDomicile" : "NE",
         "parent1ActiviteLucrative" : true,
+        "parent1AutoriteParentale" : true,
+        "parent1CantonTravail" : "BE",
+        "parent1StatutProfessionnel" : "SALARIE",
+        "parent1RevenuAvs" : 2500,
         "parent2ActiviteLucrative" : true,
-        "parent1Salaire" : 2500,
-        "parent2Salaire" : 3000
+        "parent2AutoriteParentale" : true,
+        "parent2CantonTravail" : "FR",
+        "parent2StatutProfessionnel" : "SALARIE",
+        "parent2RevenuAvs" : 3000
     }
      */
     @PostMapping("/droits/quel-parent")
-    public String getParentDroitAllocation(@RequestBody Map<String, Object> params) {
-        return inTransaction(() -> allocationService.getParentDroitAllocation(params).parent());
+    public String getParentDroitAllocation(@RequestBody ParentDroitAllocationRequest params) {
+        return inTransaction(() -> allocationService.getParentDroitAllocation(params.toParameters()).parent());
     }
 
     @GetMapping("/allocataires")
