@@ -31,6 +31,30 @@ public class AllocationService {
     return allocationMapper.findAll();
   }
 
+  public Allocataire updateAllocataire(long allocataireId, Allocataire modification) {
+    System.out.println("Modifier l'allocataire " + allocataireId);
+    Objects.requireNonNull(modification, "modification");
+
+    if (!allocataireMapper.existsById(allocataireId)) {
+      throw new AllocataireIntrouvableException(allocataireId);
+    }
+
+    Allocataire allocataire = allocataireMapper.findById(allocataireId);
+    boolean nomChange = !Objects.equals(allocataire.getNom(), modification.getNom());
+    boolean prenomChange = !Objects.equals(allocataire.getPrenom(), modification.getPrenom());
+
+    if (!nomChange && !prenomChange) {
+      throw new ModificationAllocataireSansChangementException(allocataireId);
+    }
+
+    Allocataire allocataireModifie = new Allocataire(
+        allocataire.getNoAVS(),
+        modification.getNom(),
+        modification.getPrenom());
+    allocataireMapper.updateNomPrenom(allocataireId, allocataireModifie.getNom(), allocataireModifie.getPrenom());
+    return allocataireModifie;
+  }
+
   public void deleteAllocataire(long allocataireId) {
     System.out.println("Supprimer l'allocataire " + allocataireId);
 

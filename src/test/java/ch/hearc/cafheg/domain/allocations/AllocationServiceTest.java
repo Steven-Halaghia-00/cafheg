@@ -76,6 +76,95 @@ class AllocationServiceTest {
   }
 
   @Test
+  void updateAllocataire_GivenChangedNomOnly_ShouldUpdateNomAndKeepNoAvs() {
+    Mockito.when(allocataireMapper.existsById(1L)).thenReturn(true);
+    Mockito.when(allocataireMapper.findById(1L))
+        .thenReturn(new Allocataire(new NoAVS("1000-2000"), "Geiser", "Arnaud"));
+
+    Allocataire allocataire = allocationService.updateAllocataire(1L,
+        new Allocataire(new NoAVS("9999-9999"), "Vuillaume", "Arnaud"));
+
+    assertAll(() -> assertThat(allocataire.getNoAVS()).isEqualTo(new NoAVS("1000-2000")),
+        () -> assertThat(allocataire.getNom()).isEqualTo("Vuillaume"),
+        () -> assertThat(allocataire.getPrenom()).isEqualTo("Arnaud"));
+    Mockito.verify(allocataireMapper).updateNomPrenom(1L, "Vuillaume", "Arnaud");
+  }
+
+  @Test
+  void updateAllocataire_GivenChangedPrenomOnly_ShouldUpdatePrenomAndKeepNoAvs() {
+    Mockito.when(allocataireMapper.existsById(1L)).thenReturn(true);
+    Mockito.when(allocataireMapper.findById(1L))
+        .thenReturn(new Allocataire(new NoAVS("1000-2000"), "Geiser", "Arnaud"));
+
+    Allocataire allocataire = allocationService.updateAllocataire(1L,
+        new Allocataire(new NoAVS("9999-9999"), "Geiser", "Theo"));
+
+    assertAll(() -> assertThat(allocataire.getNoAVS()).isEqualTo(new NoAVS("1000-2000")),
+        () -> assertThat(allocataire.getNom()).isEqualTo("Geiser"),
+        () -> assertThat(allocataire.getPrenom()).isEqualTo("Theo"));
+    Mockito.verify(allocataireMapper).updateNomPrenom(1L, "Geiser", "Theo");
+  }
+
+  @Test
+  void updateAllocataire_GivenChangedNomAndPrenom_ShouldUpdateBothAndKeepNoAvs() {
+    Mockito.when(allocataireMapper.existsById(1L)).thenReturn(true);
+    Mockito.when(allocataireMapper.findById(1L))
+        .thenReturn(new Allocataire(new NoAVS("1000-2000"), "Geiser", "Arnaud"));
+
+    Allocataire allocataire = allocationService.updateAllocataire(1L,
+        new Allocataire(new NoAVS("9999-9999"), "Vuillaume", "Theo"));
+
+    assertAll(() -> assertThat(allocataire.getNoAVS()).isEqualTo(new NoAVS("1000-2000")),
+        () -> assertThat(allocataire.getNom()).isEqualTo("Vuillaume"),
+        () -> assertThat(allocataire.getPrenom()).isEqualTo("Theo"));
+    Mockito.verify(allocataireMapper).updateNomPrenom(1L, "Vuillaume", "Theo");
+  }
+
+  @Test
+  void updateAllocataire_GivenNoNomOrPrenomChange_ShouldThrowAndNotUpdate() {
+    Mockito.when(allocataireMapper.existsById(1L)).thenReturn(true);
+    Mockito.when(allocataireMapper.findById(1L))
+        .thenReturn(new Allocataire(new NoAVS("1000-2000"), "Geiser", "Arnaud"));
+
+    assertThatThrownBy(() -> allocationService.updateAllocataire(1L,
+        new Allocataire(new NoAVS("1000-2000"), "Geiser", "Arnaud")))
+        .isInstanceOf(ModificationAllocataireSansChangementException.class)
+        .hasMessageContaining("1");
+
+    Mockito.verify(allocataireMapper, Mockito.never())
+        .updateNomPrenom(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
+  }
+
+  @Test
+  void updateAllocataire_GivenOnlyNoAvsChange_ShouldThrowAndNotUpdate() {
+    Mockito.when(allocataireMapper.existsById(1L)).thenReturn(true);
+    Mockito.when(allocataireMapper.findById(1L))
+        .thenReturn(new Allocataire(new NoAVS("1000-2000"), "Geiser", "Arnaud"));
+
+    assertThatThrownBy(() -> allocationService.updateAllocataire(1L,
+        new Allocataire(new NoAVS("9999-9999"), "Geiser", "Arnaud")))
+        .isInstanceOf(ModificationAllocataireSansChangementException.class)
+        .hasMessageContaining("1");
+
+    Mockito.verify(allocataireMapper, Mockito.never())
+        .updateNomPrenom(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
+  }
+
+  @Test
+  void updateAllocataire_GivenUnknownAllocataire_ShouldThrowAndNotUpdate() {
+    Mockito.when(allocataireMapper.existsById(99L)).thenReturn(false);
+
+    assertThatThrownBy(() -> allocationService.updateAllocataire(99L,
+        new Allocataire(new NoAVS("9999-9999"), "Vuillaume", "Theo")))
+        .isInstanceOf(AllocataireIntrouvableException.class)
+        .hasMessageContaining("99");
+
+    Mockito.verify(allocataireMapper, Mockito.never()).findById(Mockito.anyLong());
+    Mockito.verify(allocataireMapper, Mockito.never())
+        .updateNomPrenom(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
+  }
+
+  @Test
   void deleteAllocataire_GivenExistingAllocataireWithoutVersement_ShouldDeleteAllocataire() {
     Mockito.when(allocataireMapper.existsById(1L)).thenReturn(true);
     Mockito.when(versementMapper.existsByAllocataireId(1L)).thenReturn(false);
