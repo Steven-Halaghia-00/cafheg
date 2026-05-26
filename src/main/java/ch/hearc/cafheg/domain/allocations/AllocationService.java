@@ -6,8 +6,12 @@ import ch.hearc.cafheg.infrastructure.persistence.VersementMapper;
 
 import java.util.List;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AllocationService {
+
+  private static final Logger logger = LoggerFactory.getLogger(AllocationService.class);
 
   private final AllocataireMapper allocataireMapper;
   private final AllocationMapper allocationMapper;
@@ -23,7 +27,7 @@ public class AllocationService {
   }
 
   public List<Allocataire> findAllAllocataires(String likeNom) {
-    System.out.println("Rechercher tous les allocataires");
+    logger.info("Searching allocataires with name filter {}", likeNom);
     return allocataireMapper.findAll(likeNom);
   }
 
@@ -37,11 +41,12 @@ public class AllocationService {
   }
 
   public Allocataire updateAllocataire(long allocataireId, String nom, String prenom) {
-    System.out.println("Modifier l'allocataire " + allocataireId);
+    logger.info("Updating allocataire {}", allocataireId);
     Objects.requireNonNull(nom, "nom");
     Objects.requireNonNull(prenom, "prenom");
 
     if (!allocataireMapper.existsById(allocataireId)) {
+      logger.warn("Cannot update allocataire {} because it does not exist", allocataireId);
       throw new AllocataireIntrouvableException(allocataireId);
     }
 
@@ -50,6 +55,7 @@ public class AllocationService {
     boolean prenomChange = !Objects.equals(allocataire.getPrenom(), prenom);
 
     if (!nomChange && !prenomChange) {
+      logger.warn("Cannot update allocataire {} because no name value changed", allocataireId);
       throw new ModificationAllocataireSansChangementException(allocataireId);
     }
 
@@ -62,13 +68,15 @@ public class AllocationService {
   }
 
   public void deleteAllocataire(long allocataireId) {
-    System.out.println("Supprimer l'allocataire " + allocataireId);
+    logger.info("Deleting allocataire {}", allocataireId);
 
     if (!allocataireMapper.existsById(allocataireId)) {
+      logger.warn("Cannot delete allocataire {} because it does not exist", allocataireId);
       throw new AllocataireIntrouvableException(allocataireId);
     }
 
     if (versementMapper.existsByAllocataireId(allocataireId)) {
+      logger.warn("Cannot delete allocataire {} because versements already exist", allocataireId);
       throw new SuppressionAllocataireInterditeException(allocataireId);
     }
 
@@ -76,7 +84,7 @@ public class AllocationService {
   }
 
   public ParentDroitAllocationResult getParentDroitAllocation(ParentDroitAllocationParameters parameters) {
-    System.out.println("Determiner quel parent a le droit aux allocations");
+    logger.info("Determining which parent has allocation rights");
     Objects.requireNonNull(parameters, "parameters");
 
     if(hasOnlyParent1LucrativeActivity(parameters)) {
