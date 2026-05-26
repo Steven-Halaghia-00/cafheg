@@ -1,5 +1,56 @@
 # Cafheg - Family Allowance Management System
 
+## Travail réalisé
+
+### Exercice 1 - Décision du parent ayant droit aux allocations
+
+- Prise en main de l'application et test du endpoint REST `/droits/quel-parent`.
+- Ajout de tests unitaires sur `AllocationService#getParentDroitAllocation`.
+- Refactoring du retour initial vers un type dédié.
+- Implémentation en TDD des règles métier de décision du parent ayant droit.
+- Vérification du service et du endpoint REST après refactoring.
+
+### Exercice 2 - Gestion des allocataires
+
+- Ajout des services de suppression et de modification d'un allocataire.
+- Interdiction de suppression lorsqu'un versement existe déjà.
+- Protection du numéro AVS lors des modifications.
+- Refus des modifications sans changement utile.
+- Exposition via API REST avec codes HTTP adaptés.
+
+### Exercice 3 - Logging
+
+- Remplacement des sorties console et `printStackTrace` par des loggers SLF4J.
+- Utilisation de niveaux de logs adaptés : `error`, `warn`, `info`, `debug` et `trace`.
+- Configuration Logback avec fichier `err.log`, journal quotidien `cafheg_{date}.log` et sortie console `debug`.
+- Exclusion des fichiers de logs générés du versionnement Git.
+
+### Exercice 4 - Tests d'intégration
+
+- Ajout d'une structure dédiée `src/integration-test/java` et `src/integration-test/resources`.
+- Ajout d'un premier test d'intégration minimal `MyTestsIT`.
+- Configuration de l'exécution séparée des tests unitaires et des tests d'intégration.
+- Ajout de DBUnit et de datasets XML pour initialiser la base.
+- Ajout de tests d'intégration pour la suppression et la modification d'un allocataire.
+
+### Corrections d'audit
+
+- Sécurisation de la recherche d'un allocataire inexistant dans le mapper.
+- Nettoyage de la gestion des exceptions dans les mappers afin d'éviter le log-and-throw inutile.
+- Conservation de la cause des exceptions lors de leur transformation.
+- Vérification que les tests unitaires et les tests d'intégration restent fonctionnels.
+
+## Pratiques appliquées
+
+- Développement par branches Git.
+- Commits structurés par fonctionnalité.
+- Tests unitaires avec JUnit 5.
+- Tests d'intégration séparés des tests unitaires.
+- Utilisation de DBUnit pour préparer un état connu de la base.
+- Refactoring vers des types explicites.
+- Séparation entre contrôleurs REST, services métier et accès aux données.
+- Logging structuré avec SLF4J et Logback.
+
 ## Prerequisites
 
 - **Java 25**
