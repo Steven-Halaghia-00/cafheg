@@ -11,10 +11,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AllocationServiceTest {
 
@@ -69,6 +73,112 @@ class AllocationServiceTest {
         () -> assertThat(all.get(1).getCanton()).isEqualTo(Canton.FR),
         () -> assertThat(all.get(1).getDebut()).isEqualTo(LocalDate.now()),
         () -> assertThat(all.get(1).getFin()).isNull());
+  }
+
+  @Test
+  void getParentDroitAllocation_GivenOnlyParent1HasLucrativeActivity_ShouldReturnParent1() {
+    Map<String, Object> parameters = validParentDecisionParameters(true, false, 1000, 9000);
+
+    String parent = allocationService.getParentDroitAllocation(parameters);
+
+    assertEquals("Parent1", parent);
+  }
+
+  @Test
+  void getParentDroitAllocation_GivenOnlyParent2HasLucrativeActivity_ShouldReturnParent2() {
+    Map<String, Object> parameters = validParentDecisionParameters(false, true, 9000, 1000);
+
+    String parent = allocationService.getParentDroitAllocation(parameters);
+
+    assertEquals("Parent2", parent);
+  }
+
+  @Test
+  void getParentDroitAllocation_GivenBothParentsHaveLucrativeActivityAndParent1EarnsMore_ShouldReturnParent1() {
+    Map<String, Object> parameters = validParentDecisionParameters(true, true, 5000, 3000);
+
+    String parent = allocationService.getParentDroitAllocation(parameters);
+
+    assertEquals("Parent1", parent);
+  }
+
+  @Test
+  void getParentDroitAllocation_GivenBothParentsHaveLucrativeActivityAndParent2EarnsMore_ShouldReturnParent2() {
+    Map<String, Object> parameters = validParentDecisionParameters(true, true, 3000, 5000);
+
+    String parent = allocationService.getParentDroitAllocation(parameters);
+
+    assertEquals("Parent2", parent);
+  }
+
+  @Test
+  void getParentDroitAllocation_GivenBothParentsHaveLucrativeActivityAndEqualSalaries_ShouldReturnParent2() {
+    Map<String, Object> parameters = validParentDecisionParameters(true, true, 3000, 3000);
+
+    String parent = allocationService.getParentDroitAllocation(parameters);
+
+    assertEquals("Parent2", parent);
+  }
+
+  @Test
+  void getParentDroitAllocation_GivenNoParameters_ShouldReturnParent2() {
+    String parent = allocationService.getParentDroitAllocation(Collections.emptyMap());
+
+    assertEquals("Parent2", parent);
+  }
+
+  @Test
+  void getParentDroitAllocation_GivenResidenceAndTogetherValuesWithHigherParent2Salary_ShouldReturnParent2() {
+    Map<String, Object> parameters = new HashMap<>(validParentDecisionParameters(true, true, 2500, 3000));
+    parameters.put("enfantResidence", "Neuchatel");
+    parameters.put("parent1Residence", "Neuchatel");
+    parameters.put("parent2Residence", "Neuchatel");
+    parameters.put("parentsEnsemble", true);
+
+    String parent = allocationService.getParentDroitAllocation(parameters);
+
+    assertEquals("Parent2", parent);
+  }
+
+  @Test
+  void getParentDroitAllocation_GivenNonStringResidence_ShouldThrowClassCastException() {
+    Map<String, Object> parameters = new HashMap<>(validParentDecisionParameters(true, false, 3000, 2000));
+    parameters.put("enfantResidence", 123);
+
+    assertThrows(ClassCastException.class, () -> allocationService.getParentDroitAllocation(parameters));
+  }
+
+  @Test
+  void getParentDroitAllocation_GivenNonBooleanActivity_ShouldThrowClassCastException() {
+    Map<String, Object> parameters = new HashMap<>(validParentDecisionParameters(true, false, 3000, 2000));
+    parameters.put("parent1ActiviteLucrative", "true");
+
+    assertThrows(ClassCastException.class, () -> allocationService.getParentDroitAllocation(parameters));
+  }
+
+  @Test
+  void getParentDroitAllocation_GivenNonNumberSalary_ShouldThrowClassCastException() {
+    Map<String, Object> parameters = new HashMap<>(validParentDecisionParameters(true, false, 3000, 2000));
+    parameters.put("parent1Salaire", "3000");
+
+    assertThrows(ClassCastException.class, () -> allocationService.getParentDroitAllocation(parameters));
+  }
+
+  private Map<String, Object> validParentDecisionParameters(
+      boolean parent1ActiviteLucrative,
+      boolean parent2ActiviteLucrative,
+      Number parent1Salaire,
+      Number parent2Salaire) {
+    return Map.of(
+        "enfantResidence", "Neuchatel",
+        "parent1Residence", "Neuchatel",
+        "parent2Residence", "Bienne",
+        "parentsEnsemble", false,
+        "parent1ActiviteLucrative", parent1ActiviteLucrative,
+        "parent2ActiviteLucrative", parent2ActiviteLucrative,
+        "parent1Salaire", parent1Salaire,
+        "parent2Salaire", parent2Salaire
+    );
   }
 
 }
