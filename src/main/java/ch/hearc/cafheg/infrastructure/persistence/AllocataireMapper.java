@@ -1,6 +1,7 @@
 package ch.hearc.cafheg.infrastructure.persistence;
 
 import ch.hearc.cafheg.domain.allocations.Allocataire;
+import ch.hearc.cafheg.domain.allocations.AllocataireIntrouvableException;
 import ch.hearc.cafheg.domain.allocations.NoAVS;
 
 import java.sql.Connection;
@@ -70,7 +71,10 @@ public class AllocataireMapper extends Mapper {
       preparedStatement.setLong(1, id);
       ResultSet resultSet = preparedStatement.executeQuery();
       logger.trace("Moving to allocataire result row");
-      resultSet.next();
+      if (!resultSet.next()) {
+        logger.debug("Allocataire {} not found", id);
+        throw new AllocataireIntrouvableException(id);
+      }
       logger.debug("Mapping allocataire {}", id);
       return new Allocataire(new NoAVS(resultSet.getString(1)),
           resultSet.getString(2), resultSet.getString(3));
