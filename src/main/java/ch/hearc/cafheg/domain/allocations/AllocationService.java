@@ -3,14 +3,10 @@ package ch.hearc.cafheg.domain.allocations;
 import ch.hearc.cafheg.infrastructure.persistence.AllocataireMapper;
 import ch.hearc.cafheg.infrastructure.persistence.AllocationMapper;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
 public class AllocationService {
-
-  private static final String PARENT_1 = "Parent1";
-  private static final String PARENT_2 = "Parent2";
 
   private final AllocataireMapper allocataireMapper;
   private final AllocationMapper allocationMapper;
@@ -31,25 +27,111 @@ public class AllocationService {
     return allocationMapper.findAll();
   }
 
-  public String getParentDroitAllocation(Map<String, Object> parameters) {
-    System.out.println("Déterminer quel parent a le droit aux allocations");
-    String eR = (String)parameters.getOrDefault("enfantResidence", "");
-    Boolean p1AL = (Boolean)parameters.getOrDefault("parent1ActiviteLucrative", false);
-    String p1Residence = (String)parameters.getOrDefault("parent1Residence", "");
-    Boolean p2AL = (Boolean)parameters.getOrDefault("parent2ActiviteLucrative", false);
-    String p2Residence = (String)parameters.getOrDefault("parent2Residence", "");
-    Boolean pEnsemble = (Boolean)parameters.getOrDefault("parentsEnsemble", false);
-    Number salaireP1 = (Number) parameters.getOrDefault("parent1Salaire", BigDecimal.ZERO);
-    Number salaireP2 = (Number) parameters.getOrDefault("parent2Salaire", BigDecimal.ZERO);
+  public ParentDroitAllocationResult getParentDroitAllocation(ParentDroitAllocationParameters parameters) {
+    System.out.println("Determiner quel parent a le droit aux allocations");
+    Objects.requireNonNull(parameters, "parameters");
 
-    if(p1AL && !p2AL) {
-      return PARENT_1;
+    if(hasOnlyParent1LucrativeActivity(parameters)) {
+      return ParentDroitAllocationResult.parent1();
     }
 
-    if(p2AL && !p1AL) {
-      return PARENT_2;
+    if(hasOnlyParent2LucrativeActivity(parameters)) {
+      return ParentDroitAllocationResult.parent2();
     }
 
-    return salaireP1.doubleValue() > salaireP2.doubleValue() ? PARENT_1 : PARENT_2;
+    if(hasOnlyParent1ParentalAuthority(parameters)) {
+      return ParentDroitAllocationResult.parent1();
+    }
+
+    if(hasOnlyParent2ParentalAuthority(parameters)) {
+      return ParentDroitAllocationResult.parent2();
+    }
+
+    if(!parameters.parentsEnsemble()) {
+      return parentLivingWithChild(parameters);
+    }
+
+    ParentDroitAllocationResult parentWorkingInChildHomeCanton = parentWorkingInChildHomeCanton(parameters);
+    if(parentWorkingInChildHomeCanton != null) {
+      return parentWorkingInChildHomeCanton;
+    }
+
+    if(isEmployee(parameters.parent1()) && isIndependent(parameters.parent2())) {
+      return ParentDroitAllocationResult.parent1();
+    }
+
+    if(isEmployee(parameters.parent2()) && isIndependent(parameters.parent1())) {
+      return ParentDroitAllocationResult.parent2();
+    }
+
+    return parentWithHighestAvsIncome(parameters);
+  }
+
+  private boolean hasOnlyParent1LucrativeActivity(ParentDroitAllocationParameters parameters) {
+    return parameters.parent1().activiteLucrative() && !parameters.parent2().activiteLucrative();
+  }
+
+  private boolean hasOnlyParent2LucrativeActivity(ParentDroitAllocationParameters parameters) {
+    return parameters.parent2().activiteLucrative() && !parameters.parent1().activiteLucrative();
+  }
+
+  private boolean hasOnlyParent1ParentalAuthority(ParentDroitAllocationParameters parameters) {
+    return parameters.parent1().autoriteParentale() && !parameters.parent2().autoriteParentale();
+  }
+
+  private boolean hasOnlyParent2ParentalAuthority(ParentDroitAllocationParameters parameters) {
+    return parameters.parent2().autoriteParentale() && !parameters.parent1().autoriteParentale();
+  }
+
+  private ParentDroitAllocationResult parentLivingWithChild(ParentDroitAllocationParameters parameters) {
+    boolean childLivesWithParent1 = livesWithChild(parameters.parent1(), parameters.enfantResidence());
+    boolean childLivesWithParent2 = livesWithChild(parameters.parent2(), parameters.enfantResidence());
+
+    if(childLivesWithParent1 && !childLivesWithParent2) {
+      return ParentDroitAllocationResult.parent1();
+    }
+
+    if(childLivesWithParent2 && !childLivesWithParent1) {
+      return ParentDroitAllocationResult.parent2();
+    }
+
+    return parentWithHighestAvsIncome(parameters);
+  }
+
+  private boolean livesWithChild(ParentDroitAllocationParent parent, String enfantResidence) {
+    return parent.residence().equals(enfantResidence);
+  }
+
+  private ParentDroitAllocationResult parentWorkingInChildHomeCanton(ParentDroitAllocationParameters parameters) {
+    boolean parent1WorksInChildHomeCanton = worksInCanton(parameters.parent1(), parameters.enfantCantonDomicile());
+    boolean parent2WorksInChildHomeCanton = worksInCanton(parameters.parent2(), parameters.enfantCantonDomicile());
+
+    if(parent1WorksInChildHomeCanton && !parent2WorksInChildHomeCanton) {
+      return ParentDroitAllocationResult.parent1();
+    }
+
+    if(parent2WorksInChildHomeCanton && !parent1WorksInChildHomeCanton) {
+      return ParentDroitAllocationResult.parent2();
+    }
+
+    return null;
+  }
+
+  private boolean worksInCanton(ParentDroitAllocationParent parent, Canton canton) {
+    return canton != null && canton == parent.cantonTravail();
+  }
+
+  private boolean isEmployee(ParentDroitAllocationParent parent) {
+    return parent.statutProfessionnel() == StatutProfessionnel.SALARIE;
+  }
+
+  private boolean isIndependent(ParentDroitAllocationParent parent) {
+    return parent.statutProfessionnel() == StatutProfessionnel.INDEPENDANT;
+  }
+
+  private ParentDroitAllocationResult parentWithHighestAvsIncome(ParentDroitAllocationParameters parameters) {
+    return parameters.parent1().revenuAvs().compareTo(parameters.parent2().revenuAvs()) > 0
+        ? ParentDroitAllocationResult.parent1()
+        : ParentDroitAllocationResult.parent2();
   }
 }

@@ -71,4 +71,193 @@ class AllocationServiceTest {
         () -> assertThat(all.get(1).getFin()).isNull());
   }
 
+  @Test
+  void getParentDroitAllocation_CaseA_GivenOnlyParent1HasLucrativeActivity_ShouldReturnParent1() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, false, "Neuchatel", Canton.BE, StatutProfessionnel.INDEPENDANT, 1000),
+        parent(false, true, "Bienne", Canton.NE, StatutProfessionnel.SALARIE, 9000),
+        "Bienne",
+        false,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent1());
+  }
+
+  @Test
+  void getParentDroitAllocation_CaseA_GivenOnlyParent2HasLucrativeActivity_ShouldReturnParent2() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(false, true, "Neuchatel", Canton.NE, StatutProfessionnel.SALARIE, 9000),
+        parent(true, false, "Bienne", Canton.BE, StatutProfessionnel.INDEPENDANT, 1000),
+        "Neuchatel",
+        false,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
+  }
+
+  @Test
+  void getParentDroitAllocation_CaseB_GivenOnlyParent1HasParentalAuthority_ShouldReturnParent1() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.INDEPENDANT, 1000),
+        parent(true, false, "Bienne", Canton.FR, StatutProfessionnel.SALARIE, 9000),
+        "Bienne",
+        false,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent1());
+  }
+
+  @Test
+  void getParentDroitAllocation_CaseB_GivenOnlyParent2HasParentalAuthority_ShouldReturnParent2() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, false, "Neuchatel", Canton.BE, StatutProfessionnel.SALARIE, 9000),
+        parent(true, true, "Bienne", Canton.FR, StatutProfessionnel.INDEPENDANT, 1000),
+        "Neuchatel",
+        false,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
+  }
+
+  @Test
+  void getParentDroitAllocation_CaseC_GivenSeparatedParentsAndChildLivesWithParent1_ShouldReturnParent1() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.SALARIE, 1000),
+        parent(true, true, "Bienne", Canton.FR, StatutProfessionnel.SALARIE, 9000),
+        "Neuchatel",
+        false,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent1());
+  }
+
+  @Test
+  void getParentDroitAllocation_CaseC_GivenSeparatedParentsAndChildLivesWithParent2_ShouldReturnParent2() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.SALARIE, 9000),
+        parent(true, true, "Bienne", Canton.FR, StatutProfessionnel.SALARIE, 1000),
+        "Bienne",
+        false,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
+  }
+
+  @Test
+  void getParentDroitAllocation_CaseD_GivenParent1WorksInChildHomeCanton_ShouldReturnParent1() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.NE, StatutProfessionnel.SALARIE, 1000),
+        parent(true, true, "Neuchatel", Canton.FR, StatutProfessionnel.SALARIE, 9000),
+        "Neuchatel",
+        true,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent1());
+  }
+
+  @Test
+  void getParentDroitAllocation_CaseD_GivenParent2WorksInChildHomeCanton_ShouldReturnParent2() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.SALARIE, 9000),
+        parent(true, true, "Neuchatel", Canton.NE, StatutProfessionnel.SALARIE, 1000),
+        "Neuchatel",
+        true,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
+  }
+
+  @Test
+  void getParentDroitAllocation_CaseE_GivenParent1IsEmployeeAndParent2Independent_ShouldReturnParent1() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.SALARIE, 1000),
+        parent(true, true, "Neuchatel", Canton.FR, StatutProfessionnel.INDEPENDANT, 9000),
+        "Neuchatel",
+        true,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent1());
+  }
+
+  @Test
+  void getParentDroitAllocation_CaseE_GivenParent2IsEmployeeAndParent1Independent_ShouldReturnParent2() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.INDEPENDANT, 9000),
+        parent(true, true, "Neuchatel", Canton.FR, StatutProfessionnel.SALARIE, 1000),
+        "Neuchatel",
+        true,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
+  }
+
+  @Test
+  void getParentDroitAllocation_CaseE_GivenBothParentsAreEmployees_ShouldReturnHighestAvsIncome() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.SALARIE, 9000),
+        parent(true, true, "Neuchatel", Canton.FR, StatutProfessionnel.SALARIE, 1000),
+        "Neuchatel",
+        true,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent1());
+  }
+
+  @Test
+  void getParentDroitAllocation_CaseF_GivenBothParentsAreIndependent_ShouldReturnHighestAvsIncome() {
+    ParentDroitAllocationParameters parameters = decision(
+        parent(true, true, "Neuchatel", Canton.BE, StatutProfessionnel.INDEPENDANT, 1000),
+        parent(true, true, "Neuchatel", Canton.FR, StatutProfessionnel.INDEPENDANT, 9000),
+        "Neuchatel",
+        true,
+        Canton.NE);
+
+    ParentDroitAllocationResult result = allocationService.getParentDroitAllocation(parameters);
+
+    assertThat(result).isEqualTo(ParentDroitAllocationResult.parent2());
+  }
+
+  private ParentDroitAllocationParameters decision(
+      ParentDroitAllocationParent parent1,
+      ParentDroitAllocationParent parent2,
+      String enfantResidence,
+      boolean parentsEnsemble,
+      Canton enfantCantonDomicile) {
+    return new ParentDroitAllocationParameters(parent1, parent2, enfantResidence, parentsEnsemble,
+        enfantCantonDomicile);
+  }
+
+  private ParentDroitAllocationParent parent(
+      boolean activiteLucrative,
+      boolean autoriteParentale,
+      String residence,
+      Canton cantonTravail,
+      StatutProfessionnel statutProfessionnel,
+      int revenuAvs) {
+    return new ParentDroitAllocationParent(activiteLucrative, autoriteParentale, residence, cantonTravail,
+        statutProfessionnel, BigDecimal.valueOf(revenuAvs));
+  }
+
 }
