@@ -1,8 +1,10 @@
 package ch.hearc.cafheg.infrastructure.web;
 
 import ch.hearc.cafheg.domain.allocations.Allocataire;
+import ch.hearc.cafheg.domain.allocations.AllocataireIntrouvableException;
 import ch.hearc.cafheg.domain.allocations.Allocation;
 import ch.hearc.cafheg.domain.allocations.AllocationService;
+import ch.hearc.cafheg.domain.allocations.SuppressionAllocataireInterditeException;
 import ch.hearc.cafheg.domain.versements.VersementService;
 import ch.hearc.cafheg.infrastructure.pdf.PDFExporter;
 import ch.hearc.cafheg.infrastructure.persistence.AllocataireMapper;
@@ -11,6 +13,7 @@ import ch.hearc.cafheg.infrastructure.persistence.EnfantMapper;
 import ch.hearc.cafheg.infrastructure.persistence.VersementMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +31,8 @@ public class RESTController {
     private final VersementService versementService;
 
     public RESTController() {
-        this.allocationService = new AllocationService(new AllocataireMapper(), new AllocationMapper());
+        this.allocationService = new AllocationService(new AllocataireMapper(), new AllocationMapper(),
+                                                       new VersementMapper());
         this.versementService = new VersementService(new VersementMapper(), new AllocataireMapper(),
                                                      new PDFExporter(new EnfantMapper())
         );
@@ -65,6 +69,26 @@ public class RESTController {
             @RequestParam(value = "startsWith", required = false) String start
     ) {
         return inTransaction(() -> allocationService.findAllAllocataires(start));
+    }
+
+    @DeleteMapping("/allocataires/{allocataireId}")
+    public ResponseEntity<Void> deleteAllocataire(@PathVariable("allocataireId") long allocataireId) {
+        inTransaction(() -> {
+            allocationService.deleteAllocataire(allocataireId);
+            return null;
+        });
+        return ResponseEntity.noContent().build();
+    }
+
+    @ExceptionHandler(AllocataireIntrouvableException.class)
+    public ResponseEntity<String> allocataireIntrouvable(AllocataireIntrouvableException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
+    }
+
+    @ExceptionHandler(SuppressionAllocataireInterditeException.class)
+    public ResponseEntity<String> suppressionAllocataireInterdite(
+            SuppressionAllocataireInterditeException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(exception.getMessage());
     }
 
     @GetMapping("/allocations")
