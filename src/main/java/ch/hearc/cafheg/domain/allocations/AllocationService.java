@@ -32,16 +32,22 @@ public class AllocationService {
   }
 
   public Allocataire updateAllocataire(long allocataireId, Allocataire modification) {
-    System.out.println("Modifier l'allocataire " + allocataireId);
     Objects.requireNonNull(modification, "modification");
+    return updateAllocataire(allocataireId, modification.getNom(), modification.getPrenom());
+  }
+
+  public Allocataire updateAllocataire(long allocataireId, String nom, String prenom) {
+    System.out.println("Modifier l'allocataire " + allocataireId);
+    Objects.requireNonNull(nom, "nom");
+    Objects.requireNonNull(prenom, "prenom");
 
     if (!allocataireMapper.existsById(allocataireId)) {
       throw new AllocataireIntrouvableException(allocataireId);
     }
 
     Allocataire allocataire = allocataireMapper.findById(allocataireId);
-    boolean nomChange = !Objects.equals(allocataire.getNom(), modification.getNom());
-    boolean prenomChange = !Objects.equals(allocataire.getPrenom(), modification.getPrenom());
+    boolean nomChange = !Objects.equals(allocataire.getNom(), nom);
+    boolean prenomChange = !Objects.equals(allocataire.getPrenom(), prenom);
 
     if (!nomChange && !prenomChange) {
       throw new ModificationAllocataireSansChangementException(allocataireId);
@@ -49,8 +55,8 @@ public class AllocationService {
 
     Allocataire allocataireModifie = new Allocataire(
         allocataire.getNoAVS(),
-        modification.getNom(),
-        modification.getPrenom());
+        nom,
+        prenom);
     allocataireMapper.updateNomPrenom(allocataireId, allocataireModifie.getNom(), allocataireModifie.getPrenom());
     return allocataireModifie;
   }

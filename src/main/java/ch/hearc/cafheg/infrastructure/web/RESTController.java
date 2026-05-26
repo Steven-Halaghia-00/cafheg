@@ -4,11 +4,13 @@ import ch.hearc.cafheg.domain.allocations.Allocataire;
 import ch.hearc.cafheg.domain.allocations.AllocataireIntrouvableException;
 import ch.hearc.cafheg.domain.allocations.Allocation;
 import ch.hearc.cafheg.domain.allocations.AllocationService;
+import ch.hearc.cafheg.domain.allocations.ModificationAllocataireSansChangementException;
 import ch.hearc.cafheg.domain.allocations.SuppressionAllocataireInterditeException;
 import ch.hearc.cafheg.domain.versements.VersementService;
 import ch.hearc.cafheg.infrastructure.pdf.PDFExporter;
 import ch.hearc.cafheg.infrastructure.persistence.AllocataireMapper;
 import ch.hearc.cafheg.infrastructure.persistence.AllocationMapper;
+import ch.hearc.cafheg.infrastructure.persistence.Database;
 import ch.hearc.cafheg.infrastructure.persistence.EnfantMapper;
 import ch.hearc.cafheg.infrastructure.persistence.VersementMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,8 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
-
-import static ch.hearc.cafheg.infrastructure.persistence.Database.inTransaction;
+import java.util.function.Supplier;
 
 @RestController
 @Tag(name = "CAFHEG API")
@@ -29,13 +30,21 @@ public class RESTController {
 
     private final AllocationService allocationService;
     private final VersementService versementService;
+    private final boolean useTransactions;
 
     public RESTController() {
-        this.allocationService = new AllocationService(new AllocataireMapper(), new AllocationMapper(),
-                                                       new VersementMapper());
-        this.versementService = new VersementService(new VersementMapper(), new AllocataireMapper(),
-                                                     new PDFExporter(new EnfantMapper())
-        );
+        this(new AllocationService(new AllocataireMapper(), new AllocationMapper(), new VersementMapper()),
+             new VersementService(new VersementMapper(), new AllocataireMapper(), new PDFExporter(new EnfantMapper())));
+    }
+
+    RESTController(AllocationService allocationService, VersementService versementService) {
+        this(allocationService, versementService, true);
+    }
+
+    RESTController(AllocationService allocationService, VersementService versementService, boolean useTransactions) {
+        this.allocationService = allocationService;
+        this.versementService = versementService;
+        this.useTransactions = useTransactions;
     }
 
     /*
@@ -80,6 +89,19 @@ public class RESTController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/allocataires/{allocataireId}")
+    public ResponseEntity<Allocataire> updateAllocataire(
+            @PathVariable("allocataireId") long allocataireId,
+            @RequestBody ModificationAllocataireRequest request) {
+        if (request == null || request.hasBlankRequiredField()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Allocataire allocataire = inTransaction(
+                () -> allocationService.updateAllocataire(allocataireId, request.nom(), request.prenom()));
+        return ResponseEntity.ok(allocataire);
+    }
+
     @ExceptionHandler(AllocataireIntrouvableException.class)
     public ResponseEntity<String> allocataireIntrouvable(AllocataireIntrouvableException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
@@ -89,6 +111,12 @@ public class RESTController {
     public ResponseEntity<String> suppressionAllocataireInterdite(
             SuppressionAllocataireInterditeException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(exception.getMessage());
+    }
+
+    @ExceptionHandler(ModificationAllocataireSansChangementException.class)
+    public ResponseEntity<String> modificationAllocataireSansChangement(
+            ModificationAllocataireSansChangementException exception) {
+        return ResponseEntity.badRequest().body(exception.getMessage());
     }
 
     @GetMapping("/allocations")
@@ -123,5 +151,13 @@ public class RESTController {
         headers.add("Content-Disposition", "attachment; filename=\"versements_" + allocataireId + ".pdf\"");
         headers.add("Access-Control-Expose-Headers", "Content-Disposition");
         return ResponseEntity.ok().headers(headers).body(pdf);
+    }
+
+    private <T> T inTransaction(Supplier<T> supplier) {
+        if (useTransactions) {
+            return Database.inTransaction(supplier);
+        }
+
+        return supplier.get();
     }
 }
